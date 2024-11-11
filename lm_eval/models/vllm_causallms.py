@@ -3,20 +3,15 @@ from importlib.metadata import version
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Tuple, Union
 
-from more_itertools import distribute
-from packaging.version import parse as parse_version
-from tqdm import tqdm
-
 from lm_eval.api.instance import Instance
 from lm_eval.api.model import TemplateLM
 from lm_eval.api.registry import register_model
 from lm_eval.models.utils import Collator, configure_pad_token, undistribute
-from lm_eval.utils import (
-    eval_logger,
-    get_rolling_token_windows,
-    make_disjoint_window,
-)
-
+from lm_eval.utils import (eval_logger, get_rolling_token_windows,
+                           make_disjoint_window)
+from more_itertools import distribute
+from packaging.version import parse as parse_version
+from tqdm import tqdm
 
 try:
     import ray
@@ -99,6 +94,13 @@ class VLLM(TemplateLM):
             if isinstance(batch_size, str) and "auto" in batch_size
             else batch_size
         )
+        self.model_args.pop('my_mode',None)
+        self.model_args.pop('split_file',None)
+        self.model_args.pop('insert_layers',None)
+        self.model_args.pop('normalize',None)
+        self.model_args.pop('operator',None)
+        self.model_args.pop('coef',None)
+        
         if self.data_parallel_size <= 1:
             self.model = LLM(**self.model_args)
         else:
@@ -314,7 +316,7 @@ class VLLM(TemplateLM):
         res = []
 
         # batch tokenize contexts
-        context, all_gen_kwargs = zip(*(req.args for req in requests))
+        context, all_gen_kwargs,original= zip(*(req.args for req in requests))
         context_encoding: List[List[int]] = self.tok_encode(
             context, add_special_tokens=self.add_bos_token
         )

@@ -271,7 +271,7 @@ def setup_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--insert_layers",
         type=str,
-        default="/home/chh/repos/my_ctg/instructions/gsm8k/gsm8k_2steps_llama_5.json",
+        default="[20]",
     )
     parser.add_argument(
         "--normalize",

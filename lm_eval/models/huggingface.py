@@ -2565,8 +2565,6 @@ class HFLM_wrap(TemplateLM):
         # so that we don't try to execute e.g. greedy sampling and temp=0.8 sampling
         # in the same batch.
         # group_fn=lambda x: x[1] -> x=(context, gen_kwargs)
-        for reg in requests:
-            reg.args
         re_ords = Collator(
             [reg.args for reg in requests],
             sort_fn=_collate,
@@ -2584,25 +2582,22 @@ class HFLM_wrap(TemplateLM):
         
         if self.my_mode==3:
             vector_pool,cons=self.get_split_hs_3(batch_split)
-        elif self.my_mode==1 or self.my_mode==2:
+        elif self.my_mode==1 or self.my_mode==2 or self.my_mode==5:
             vector_pool=self.get_split_hs(batch_split)
         if self.my_mode!=0:
             insert_layer=eval(self.insert_layers)
             print("insert layers: ",insert_layer)
             layers = [i - 1 for i in insert_layer]
         for index,chunk in enumerate(chunks):
-            
             contexts, all_gen_kwargs,orginal = zip(*chunk)
             
             if self.my_mode!=0:
                 vector = vector_pool[index]
                 self.model.reset()
-                self.model.set_pos(chunk[0][-1]['original_prompt'],self.tokenizer)
-                
             
             if self.my_mode==3:
                 self.model.set_controller_2(layer_ids=layers, activations=vector,normalize=self.normalize,operator=self.operator,coef=self.coef)
-            elif self.my_mode==1 or self.my_mode==2:
+            elif self.my_mode==1 or self.my_mode==2 or self.my_mode==5:
                 self.model.set_controller(layer_ids=layers, activations=vector,normalize=self.normalize,operator=self.operator,coef=self.coef)
 
             # we assume all gen kwargs in the batch are the same
@@ -2648,6 +2643,8 @@ class HFLM_wrap(TemplateLM):
                 left_truncate_len=max_ctx_len,
                 truncation=self.truncation,
             )
+            if self.my_mode!=0:
+                self.model.set_pos([context_enc.shape[1]-1])
             context_enc = context_enc.to(self.device)
             attn_masks = attn_masks.to(self.device)
 

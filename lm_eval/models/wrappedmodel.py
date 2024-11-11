@@ -17,7 +17,7 @@ class WrappedBlock(torch.nn.Module):
         self.input_pos=None
         self.operator=None
         self.controller_chosen=None
-        
+        # self.last_saved=None
         
     def forward(self,*args,edit, **kwargs):
         output = self.block(*args, **kwargs)
@@ -30,6 +30,11 @@ class WrappedBlock(torch.nn.Module):
         # print("output 0:")
         # print(output[0].shape)
         # print(self.controller.shape)
+        # if edit==False and self.controller is not None and self.last_saved is not None:
+        #     for i in range(0,len(self.token_pos)):
+        #         token=self.token_pos[i]
+        #         modified[:, token]=self.last_saved
+            
         if self.controller is not None and edit == True:
             norm_pre = torch.norm(modified, dim=-1, keepdim=True)
             
@@ -67,6 +72,8 @@ class WrappedBlock(torch.nn.Module):
                 elif isinstance(self.token_pos, list) or isinstance(self.token_pos, tuple):
                     for i in range(0,len(self.token_pos)):
                         token=self.token_pos[i]
+                        # if self.last_saved==None:
+                        #     self.last_saved=modified[:, token]
                         modified[:, token] = self.operator(modified[:, token], self.controller[self.input_pos[i], -1].unsqueeze(0) * mask[:, -1])
                 if self.normalize:
                     norm_post = torch.norm(modified, dim=-1, keepdim=True)
@@ -135,7 +142,8 @@ class WrappedBlock(torch.nn.Module):
         self.mask = None
         self.token_pos = None
         self.operator = None
-
+        # self.last_saved=None
+        self.controller_chosen=None
     def set_masks(self, masks):
         self.mask = masks
     def set_token_pos(self,token_pos):
@@ -143,8 +151,9 @@ class WrappedBlock(torch.nn.Module):
             self.input_pos=[-1]*len(token_pos)
         else:
             self.input_pos=-1
-        # self.token_pos=token_pos
-        self.token_pos=[-1]
+        self.token_pos=token_pos
+        
+        # self.token_pos=[-1]
         
 
 BLOCK_NAMES = [
@@ -327,10 +336,7 @@ class WrappedModel(torch.nn.Module):
                     setattr(self.model.model.layers[l],
                             block_name,
                             getattr(self.model.model.layers[l], block_name).block)
-    def set_pos(self,inputs,tokenizer):
-        input_ids=tokenizer(inputs,padding=True,truncation=True,return_tensors="pt").input_ids
-        batch,seq_len=input_ids.shape
-        token_positions_list=[seq_len-1]*batch
+    def set_pos(self,token_positions_list):
         for layer in self.model.model.layers:
             layer.set_token_pos(token_positions_list) 
     def adjust_controller(self,index):
