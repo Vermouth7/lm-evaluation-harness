@@ -22,7 +22,7 @@ from lm_eval.models.utils import (Collator, clear_torch_cache,
                                   pad_and_concat, stop_sequences_criteria)
 from lm_eval.models.wrappedmodel import WrappedModel
 from packaging import version
-from peft import PeftModel
+from peft import PeftConfig, PeftModel
 from peft import __version__ as PEFT_VERSION
 from tqdm import tqdm
 from transformers.models.auto.modeling_auto import (
@@ -1906,7 +1906,11 @@ class HFLM_wrap(TemplateLM):
                 **model_kwargs,
             )
             self._model = WrappedModel(self._model)
-            
+            if self.my_mode==6:
+                peft_config = PeftConfig.from_pretrained(self.discriminator)
+                peft_config.init_lora_weights = False
+                self._model.model.add_adapter(peft_config)
+                self._model.model.disable_adapters()
             
         else:
             try:
@@ -2582,7 +2586,7 @@ class HFLM_wrap(TemplateLM):
         
         if self.my_mode==3:
             vector_pool,cons=self.get_split_hs_3(batch_split)
-        elif self.my_mode==1 or self.my_mode==2 or self.my_mode==5:
+        elif self.my_mode!=0:
             vector_pool=self.get_split_hs(batch_split)
         if self.my_mode!=0:
             insert_layer=eval(self.insert_layers)
@@ -2597,7 +2601,7 @@ class HFLM_wrap(TemplateLM):
             
             if self.my_mode==3:
                 self.model.set_controller_2(layer_ids=layers, activations=vector,normalize=self.normalize,operator=self.operator,coef=self.coef)
-            elif self.my_mode==1 or self.my_mode==2 or self.my_mode==5:
+            elif self.my_mode!=0:
                 self.model.set_controller(layer_ids=layers, activations=vector,normalize=self.normalize,operator=self.operator,coef=self.coef)
 
             # we assume all gen kwargs in the batch are the same

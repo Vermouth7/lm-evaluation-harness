@@ -66,7 +66,8 @@ def simple_evaluate(
     normalize=False,
     operator='replace',
     coef=1.0,
-    discriminator=None
+    discriminator=None,
+    patch=False,
 ):
     """Instantiate and evaluate a model on a list of tasks.
 
@@ -320,6 +321,8 @@ def simple_evaluate(
         apply_chat_template=apply_chat_template,
         fewshot_as_multiturn=fewshot_as_multiturn,
         verbosity=verbosity,
+        split_file=split_file,
+        patch=patch
     )
 
     if lm.rank == 0:
@@ -386,6 +389,8 @@ def evaluate(
     apply_chat_template: Union[bool, str] = False,
     fewshot_as_multiturn: bool = False,
     verbosity: str = "INFO",
+    split_file=None,
+    patch=False
 ):
     """Instantiate and evaluate a model on a list of tasks.
 
@@ -468,6 +473,8 @@ def evaluate(
             tokenizer_name=getattr(lm, "tokenizer_name", "")
             if apply_chat_template
             else "",
+            split_file=split_file,
+            patch=patch
         )
         eval_logger.debug(
             f"Task: {task_output.task_name}; number of requests on this rank: {len(task.instances)}"

@@ -275,7 +275,7 @@ def setup_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--normalize",
-        action="store_true",
+        action="store_true"
     )
     parser.add_argument(
         "--operator",
@@ -292,6 +292,11 @@ def setup_parser() -> argparse.ArgumentParser:
         type=str,
         default=None,
     )
+    parser.add_argument(
+        "--patch",
+        action="store_true"
+    )
+    
     return parser
 
 
@@ -446,6 +451,7 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
         operator=args.operator,
         coef=args.coef,
         discriminator=args.discriminator,
+        patch=args.patch,
         **request_caching_args,
     )
 

@@ -380,10 +380,12 @@ class Task(abc.ABC):
         fewshot_as_multiturn: bool = False,
         chat_template: Optional[Callable] = None,
         tokenizer_name: str = "",
+        split_file=None,
+        patch=False
     ) -> None:
         """Build a set of Instances for a task, and store them in task.instances"""
-        # with open('/home/chh/repos/my_ctg/instructions/ifeval/ifeval_2steps_llama_3.json', 'r', encoding='utf-8') as input_file:
-        #     split_data=json.load(input_file)
+        with open(split_file, 'r', encoding='utf-8') as input_file:
+            split_data=json.load(input_file)
         # used with caching
         og_limit = limit
 
@@ -433,10 +435,13 @@ class Task(abc.ABC):
             doc_id_docs,
             total=num_docs,
         ):
-            # for i in split_data:
-            #     if i['prompt']==doc['prompt']:
-            #         doc['original_prompt']=doc['prompt']
-                    # doc['prompt']=doc['prompt']+" "+i['instruction 1']+" "+i['instruction 2']
+            if patch:
+                key = next((k for k in ['question', 'prompt', 'problem'] if k in doc), None)
+                
+                for i in split_data:
+                    if i[key]==doc[key]:
+                        doc['original_prompt']=doc[key]
+                        doc[key]=doc[key]+" "+i['instruction 1']+" "+i['instruction 2']
             # sample fewshot context #TODO: need to offset doc_id by rank now!
             fewshot_ctx = self.fewshot_context(
                 doc,
@@ -1334,16 +1339,8 @@ class ConfigurableTask(Task):
                 arguments.extend(aux_arguments)
 
         elif self.OUTPUT_TYPE == "generate_until":
-            keys=doc.keys()
-            if 'question' in keys:
-                temp=doc['question']
-            elif 'prompt' in keys:
-                temp=doc['prompt']
-            elif 'problem' in keys:
-                temp=doc['problem']
-            else:
-                temp=doc
-            arguments = (ctx, deepcopy(self.config.generation_kwargs),{"original_prompt":temp})
+            key = next((k for k in ['original_prompt','question', 'prompt', 'problem'] if k in doc), None)
+            arguments = (ctx, deepcopy(self.config.generation_kwargs),{"original_prompt":doc[key]})
 
         multimodal_arg = {}
         if (

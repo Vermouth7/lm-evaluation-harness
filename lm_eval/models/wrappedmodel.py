@@ -17,7 +17,7 @@ class WrappedBlock(torch.nn.Module):
         self.input_pos=None
         self.operator=None
         self.controller_chosen=None
-        # self.last_saved=None
+        self.last_saved=None
         
     def forward(self,*args,edit, **kwargs):
         output = self.block(*args, **kwargs)
@@ -34,7 +34,11 @@ class WrappedBlock(torch.nn.Module):
         #     for i in range(0,len(self.token_pos)):
         #         token=self.token_pos[i]
         #         modified[:, token]=self.last_saved
-            
+        if self.last_saved is not None:
+            for i in range(0,len(self.token_pos)):
+                token=self.token_pos[i]-1
+                modified[:, token]=self.last_saved
+        
         if self.controller is not None and edit == True:
             norm_pre = torch.norm(modified, dim=-1, keepdim=True)
             
@@ -73,9 +77,9 @@ class WrappedBlock(torch.nn.Module):
                     for i in range(0,len(self.token_pos)):
                         token=self.token_pos[i]
                         # if self.last_saved==None:
-                        #     self.last_saved=modified[:, token]
+                        self.last_saved=modified[:, token]
                         modified[:, token] = self.operator(modified[:, token], self.controller[self.input_pos[i], -1].unsqueeze(0) * mask[:, -1])
-                if self.normalize:
+                if self.normalize: 
                     norm_post = torch.norm(modified, dim=-1, keepdim=True)
                     modified = modified / norm_post * norm_pre
             else:
@@ -142,7 +146,7 @@ class WrappedBlock(torch.nn.Module):
         self.mask = None
         self.token_pos = None
         self.operator = None
-        # self.last_saved=None
+        self.last_saved=None
         self.controller_chosen=None
     def set_masks(self, masks):
         self.mask = masks
@@ -151,7 +155,9 @@ class WrappedBlock(torch.nn.Module):
             self.input_pos=[-1]*len(token_pos)
         else:
             self.input_pos=-1
-        self.token_pos=token_pos
+        # self.token_pos=token_pos
+        self.token_pos=[-1]
+        self.last_saved=None
         
         # self.token_pos=[-1]
         
