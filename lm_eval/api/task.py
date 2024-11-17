@@ -439,9 +439,9 @@ class Task(abc.ABC):
                 key = next((k for k in ['question', 'prompt', 'problem'] if k in doc), None)
                 
                 for i in split_data:
-                    if i[key]==doc[key]:
+                    if i['new_prompt']==doc[key]:
                         doc['original_prompt']=doc[key]
-                        doc[key]=doc[key]+" "+i['instruction 1']+" "+i['instruction 2']
+                        doc[key]=i['new_prompt']
             # sample fewshot context #TODO: need to offset doc_id by rank now!
             fewshot_ctx = self.fewshot_context(
                 doc,
