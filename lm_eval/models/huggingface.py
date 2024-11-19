@@ -2544,6 +2544,7 @@ class HFLM_wrap(TemplateLM):
             disable=(disable_tqdm or (self.rank != 0)),
             desc="Running generate_until requests",
         )
+        
         adaptive_batch_size = None
         if self.batch_size == "auto":
             # using rolling window with maximum context
@@ -2593,8 +2594,8 @@ class HFLM_wrap(TemplateLM):
             print("insert layers: ",insert_layer)
             layers = [i - 1 for i in insert_layer]
         for index,chunk in enumerate(chunks):
-            contexts, all_gen_kwargs,orginal = zip(*chunk)
-            
+            contexts, all_gen_kwargs,original = zip(*chunk)
+        
             if self.my_mode!=0:
                 vector = vector_pool[index]
                 self.model.reset()
@@ -2651,7 +2652,6 @@ class HFLM_wrap(TemplateLM):
                 self.model.set_pos([context_enc.shape[1]-1])
             context_enc = context_enc.to(self.device)
             attn_masks = attn_masks.to(self.device)
-
             if "max_length" not in kwargs:
                 kwargs["max_length"] = context_enc.shape[1] + max_gen_toks
             if cons:

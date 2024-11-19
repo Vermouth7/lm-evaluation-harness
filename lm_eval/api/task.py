@@ -439,9 +439,12 @@ class Task(abc.ABC):
                 key = next((k for k in ['question', 'prompt', 'problem'] if k in doc), None)
                 
                 for i in split_data:
-                    if i['new_prompt']==doc[key]:
+                    if i[key]==doc[key]:
                         doc['original_prompt']=doc[key]
-                        doc[key]=i['new_prompt']
+                        if key=='question' or key=='prompt':
+                            doc[key]=doc[key]+i['instruction 1']+i['instruction 2']
+                        else:
+                            doc[key]=i['new_prompt']
             # sample fewshot context #TODO: need to offset doc_id by rank now!
             fewshot_ctx = self.fewshot_context(
                 doc,
@@ -451,6 +454,7 @@ class Task(abc.ABC):
                 fewshot_as_multiturn,
                 chat_template,
             )
+           
             # TODO: we should override self.config.repeats if doing greedy gen so users don't waste time+compute
             inst = self.construct_requests(
                 doc=doc,
@@ -460,7 +464,7 @@ class Task(abc.ABC):
 
             if not isinstance(inst, list):
                 inst = [inst]
-
+            
             instances.append(inst)
 
         # now flatten, this is to allow slicing to work with pickles
@@ -972,6 +976,7 @@ class ConfigurableTask(Task):
         if self.has_test_docs():
             if self.config.process_docs is not None:
                 return self.config.process_docs(self.dataset[self.config.test_split])
+            
             return self.dataset[self.config.test_split]
 
     def fewshot_docs(self):
